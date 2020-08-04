@@ -64,6 +64,19 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 	res.redirect('/urls');
 })
 
+// taking in the edit input, updating database to reflect new given long URL
+app.post("/urls/:shortURL", (req, res) => {
+	console.log('in edit route');
+	urlDatabase[req.params.shortURL] = req.body.editedURL
+	res.redirect('/urls')
+})
+
+
+
+
+
+
+
 
 
 
