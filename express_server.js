@@ -1,12 +1,12 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-
-app.set("view engine", "ejs")
-
 const bodyParser = require("body-parser");
+//using express to use ejs as engine
+app.set("view engine", "ejs")
+//converting request body to a string from a buffer. then adding data to req object 
 app.use(bodyParser.urlencoded({extended: true}));
-
+//random 6 digit generator
 function generateRandomString() {
   return Math.random().toString(36).substring(2,8)
 }
@@ -23,13 +23,9 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
+//shows JSON string of the dtabase
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/urls", (req, res) => {
@@ -47,6 +43,35 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  // consle.log(req.body);  // Log the POST request body to the console 
+  // res.send("Ok!!!");         // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString(); 
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`)
 });
+
+// Short URL
+app.get("/u/:shortURL", (req, res) => {
+	// console.log(req)
+  const longURL = urlDatabase[req.params.shortURL]; //// need to see if [req.params.shortURL] is correct.. dont understand the path
+  res.redirect(longURL);
+});
+
+//use shortURL to delete URL from database object
+//redurect to list of URL
+app.post("/urls/:shortURL/delete", (req, res) => {
+	delete urlDatabase[req.params.shortURL];
+	res.redirect('/urls');
+})
+
+
+
+
+
+
+
+
+
+
+
+
