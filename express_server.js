@@ -15,6 +15,17 @@ app.use(bodyParser.urlencoded({extended: true}));
 function generateRandomString() {
   return Math.random().toString(36).substring(2,8);
 }
+
+//function that checks if email input on registration already exists in the database. 
+const checkIfEmailExists = function(userObject, emailGiven) {
+	for (let key in users) {
+		if (emailGiven === userObject[key].email) {
+			return false;
+		}
+	}
+	return true;
+}
+
 //database containing short URLS and long URLS ad values
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -113,20 +124,25 @@ app.get("/register", (req, res) => {
 	res.render("urls_register", templateVars);
 });
 
+
 // moving registration info to users object database
 // saving registration info to a cookie
 //rediret to /urls
 app.post("/register", (req, res) => {
   let randomID = generateRandomString();
-  users[randomID] = { 
-  	id: randomID,
-  	email: req.body.email, 
-  	password: req.body.password
-  }	
-  // console.log(users[randomID])
-  res.cookie("user_id", users[randomID]);
-  res.redirect('/urls');
-})
+  if(req.body.email && req.body.password && checkIfEmailExists(users, req.body.email)) { 
+  	users[randomID] = { 
+  		id: randomID,
+  		email: req.body.email, 
+  		password: req.body.password
+  	}
+  	res.cookie("user_id", users[randomID]);
+  	res.redirect('/urls');
+  }	else {
+    res.status(404).json({Error: 'Invalid email/Password OR email already used to register account.'});
+  }
+  console.log(users);
+});
 
 
 
