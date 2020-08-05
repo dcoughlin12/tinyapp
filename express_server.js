@@ -83,7 +83,14 @@ app.post("/login", (req, res) => {
 	res.cookie('username', req.body.login)
 	console.log(req.cookies)
 	// console.log(req.body.login)// this is the username. 
-	res.redirect('/urls')
+	res.redirect('/urls');
+})
+
+//when Logout is clicked
+//need to clear the username cookie and redirect to /urls
+app.post("/logout", (req, res) => {
+	res.clearCookie('username');
+	res.redirect('/urls');
 })
 
 
