@@ -30,7 +30,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-	let templateVars = { urls: urlDatabase}
+	let templateVars = { urls: urlDatabase,}
   res.render("urls_index", templateVars);
 });
 
@@ -67,10 +67,20 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // taking in the edit input, updating database to reflect new given long URL
 app.post("/urls/:shortURL", (req, res) => {
-	console.log('in edit route');
+	// console.log('in edit route');
 	urlDatabase[req.params.shortURL] = req.body.editedURL
 	res.redirect('/urls')
 })
+
+//set a cookie named username to the value submitted in the request body via the login form. 
+//After our server has set the cookie...
+// Redirect the browser back to the /urls page.
+app.post("/login", (req, res) => {
+	res.cookie('username', req.body.login)
+	console.log(req.body.login)// this is the username. 
+	res.redirect('/urls')
+})
+
 
 
 
