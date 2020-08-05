@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const cookieParser = require('cookie-parser')
 //using express to use ejs as engine
 app.set("view engine", "ejs")
 //converting request body to a string from a buffer. then adding data to req object 
