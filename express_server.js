@@ -47,17 +47,17 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies.username };
+  let templateVars = { urls: urlDatabase, user: req.cookies.user_id };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies.username };
+  let templateVars = { user: req.cookies.user_id };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies.username };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.user_id };
   res.render("urls_show", templateVars);
 });
 
@@ -94,7 +94,7 @@ app.post("/urls/:shortURL", (req, res) => {
 //After our server has set the cookie...
 // Redirect the browser back to the /urls page.
 app.post("/login", (req, res) => {
-  res.cookie('username', req.body.login);
+  // res.cookie('username', req.body.login);
   // console.log(req.cookies);
   // console.log(req.body.login)// this is the username.
   res.redirect('/urls');
@@ -103,13 +103,13 @@ app.post("/login", (req, res) => {
 //when Logout is clicked
 //need to clear the username cookie and redirect to /urls
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  // res.clearCookie('username');
   res.redirect('/urls');
 });
 
 //new template for login page
 app.get("/register", (req, res) => {
-	let templateVars = { username: req.cookies.username };
+	let templateVars = { user: req.cookies.user_id };
 	res.render("urls_register", templateVars);
 });
 
@@ -123,8 +123,8 @@ app.post("/register", (req, res) => {
   	email: req.body.email, 
   	password: req.body.password
   }	
-  console.log(console.log(req.cookies))
-  res.cookie("user_id", users[randomID].id);
+  // console.log(users[randomID])
+  res.cookie("user_id", users[randomID]);
   res.redirect('/urls');
 })
 
