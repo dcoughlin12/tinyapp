@@ -12,19 +12,39 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
 //random 6 digit generator
-function generateRandomString() {
-  return Math.random().toString(36).substring(2,8);
-}
+const generateRandomString = function() {
+  const randomId = Math.random().toString(36).substring(2,8);
+  return randomId;
+};
 
-//function that checks if email input on registration already exists in the database. 
+const fetchUserIdFromDatabase = function(userObject, emailGiven) {
+  for (let key in userObject) {
+    if (emailGiven === userObject[key].email) {
+      return key;
+    }
+  }
+  return false;
+};
+
+//function that checks if email input on registration already exists in the database.
+// returns true if email is taken
 const checkIfEmailExists = function(userObject, emailGiven) {
-	for (let key in users) {
-		if (emailGiven === userObject[key].email) {
-			return false;
-		}
-	}
-	return true;
-}
+  const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
+  if (matchedUserId) {
+    return true;
+  }
+  return false;
+};
+
+//function checking if given password matches password in database
+//returns true if password matches
+const checkIfPasswordMatches = function(userObject, passwordGiven, emailGiven) {
+  const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
+  if (passwordGiven === userObject[matchedUserId].password) {
+    return true;
+  }
+  return false;
+};
 
 //database containing short URLS and long URLS ad values
 const urlDatabase = {
@@ -32,49 +52,47 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 //darabase containing user information
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tiny app listening on port ${PORT}!`);
 });
 //shows JSON string of the dtabase
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, user: req.cookies.user_id };
+  let templateVars = { urls: urlDatabase, user: users[req.cookies.user_id] };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: req.cookies.user_id };
+  let templateVars = { user: users[req.cookies.user_id] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies.user_id };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies.user_id] };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  // consle.log(req.body);  // Log the POST request body to the console
-  // res.send("Ok!!!");         // Respond with 'Ok' (we will replace this)
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect(`/urls/${shortURL}`);
@@ -82,7 +100,6 @@ app.post("/urls", (req, res) => {
 
 // Short URL
 app.get("/u/:shortURL", (req, res) => {
-  // console.log(req)
   const longURL = urlDatabase[req.params.shortURL]; //// need to see if [req.params.shortURL] is correct.. dont understand the path
   res.redirect(longURL);
 });
@@ -96,32 +113,15 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 // taking in the edit input, updating database to reflect new given long URL
 app.post("/urls/:shortURL", (req, res) => {
-  // console.log('in edit route');
   urlDatabase[req.params.shortURL] = req.body.editedURL;
   res.redirect('/urls');
 });
 
-//set a cookie named username to the value submitted in the request body via the login form.
-//After our server has set the cookie...
-// Redirect the browser back to the /urls page.
-app.post("/login", (req, res) => {
-  // res.cookie('username', req.body.login);
-  // console.log(req.cookies);
-  // console.log(req.body.login)// this is the username.
-  res.redirect('/urls');
-});
-
-//when Logout is clicked
-//need to clear the username cookie and redirect to /urls
-app.post("/logout", (req, res) => {
-  // res.clearCookie('username');
-  res.redirect('/urls');
-});
 
 //new template for login page
 app.get("/register", (req, res) => {
-	let templateVars = { user: req.cookies.user_id };
-	res.render("urls_register", templateVars);
+  let templateVars = { user: null };
+  res.render("urls_register", templateVars);
 });
 
 
@@ -129,20 +129,45 @@ app.get("/register", (req, res) => {
 // saving registration info to a cookie
 //rediret to /urls
 app.post("/register", (req, res) => {
-  let randomID = generateRandomString();
-  if(req.body.email && req.body.password && checkIfEmailExists(users, req.body.email)) { 
-  	users[randomID] = { 
-  		id: randomID,
-  		email: req.body.email, 
-  		password: req.body.password
-  	}
-  	res.cookie("user_id", users[randomID]);
-  	res.redirect('/urls');
+  const randomID = generateRandomString();
+  if (req.body.email && req.body.password && !checkIfEmailExists(users, req.body.email)) {
+    users[randomID] = {
+      id: randomID,
+      email: req.body.email,
+      password: req.body.password
+    };
+    res.cookie("user_id", randomID);
+    res.redirect('/urls');
   }	else {
     res.status(404).json({Error: 'Invalid email/Password OR email already used to register account.'});
   }
-  console.log(users);
 });
+
+app.get("/login", (req, res) => {
+  let templateVars = { user: users[req.cookies.user_id] };
+  res.render("urls_login", templateVars);
+});
+
+// renders login page when header button is pressed.
+app.post("/login", (req, res) => {
+  let loginEmail = req.body.email;
+  let loginPassword = req.body.password;
+  if (checkIfEmailExists(users, loginEmail) && checkIfPasswordMatches(users, loginPassword, loginEmail)) {
+    const matchedId = fetchUserIdFromDatabase(users, loginEmail);
+    res.cookie("user_id", matchedId);
+    res.redirect("/urls");
+  } else {
+    res.status(403).json({Error: 'Invalid email/Password Combination'});
+  }
+});
+
+//when Logout is clicked
+//need to clear the user_id cookie and redirect to /urls
+app.get("/logout", (req, res) => {
+  res.clearCookie('user_id');
+  res.redirect('/urls');
+});
+
 
 
 
