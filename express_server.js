@@ -2,10 +2,16 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser');
+// const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session')
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+}))
+
+// app.use(cookieParser());
 //using express to use ejs as engine
 app.set("view engine", "ejs");
 //converting request body to a string from a buffer. then adding data to req object
@@ -31,16 +37,6 @@ const fetchUserIdFromDatabase = function(userObject, emailGiven) {
 const checkIfEmailExists = function(userObject, emailGiven) {
   const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
   if (matchedUserId) {
-    return true;
-  }
-  return false;
-};
-
-//function checking if given password matches password in database
-//returns true if password matches
-const checkIfPasswordMatches = function(userObject, passwordGiven, emailGiven) {
-  const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
-  if (passwordGiven === userObject[matchedUserId].password) {
     return true;
   }
   return false;
@@ -94,8 +90,7 @@ app.listen(PORT, () => {
 
 //Main page to view URLS
 app.get("/urls", (req, res) => {
-	// console.log(urlsForUser(users[req.cookies.user_id].id))
-	const loginAccountId = req.cookies.user_id;
+	const loginAccountId = req.session.user_id;
 	const accountUrls = urlsForUser(loginAccountId);
 	// console.log(accountUrls)
   const templateVars = { urls: accountUrls, user: users[loginAccountId] };
@@ -105,7 +100,7 @@ app.get("/urls", (req, res) => {
 
 //page with input field to enter long URL. if not logged in redirected to loogin page
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.cookies.user_id] };
+  let templateVars = { user: users[req.session.user_id] };
   if (templateVars.user) {
   	res.render("urls_new", templateVars);
   } else {
@@ -114,14 +109,14 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies.user_id] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
   res.render("urls_show", templateVars);
 });
 
 // post to create the tinyURL
 app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = { 'longURL': req.body.longURL, 'userID': users[req.cookies.user_id].id };
+  urlDatabase[shortURL] = { 'longURL': req.body.longURL, 'userID': users[req.session.user_id].id };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -135,7 +130,7 @@ app.get("/u/:shortURL", (req, res) => {
 //redurect to list of URL
 // userID had to match loginID in order to delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const loginAccountId = req.cookies.user_id;
+  const loginAccountId = req.session.user_id;
   const accountUrls = urlsForUser(loginAccountId);
   const idOfAccountUrls = accountUrls[req.params.shortURL].userID
   if (loginAccountId === idOfAccountUrls) {
@@ -149,7 +144,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 // taking in the edit input, updating database to reflect new given long URL
 // userID had to match loginID in order to edit
 app.post("/urls/:shortURL", (req, res) => {
-  const loginAccountId = req.cookies.user_id;
+  const loginAccountId = req.session.user_id;
   if (loginAccountId === urlDatabase[req.params.shortURL].userID) {
   urlDatabase[req.params.shortURL].longURL = req.body.editedURL;
   res.redirect('/urls');
@@ -179,7 +174,7 @@ app.post("/register", (req, res) => {
       email: req.body.email,
       password: hashedPassword
     };
-    res.cookie("user_id", randomID);
+    req.session.user_id = randomID;
     res.redirect('/urls');
     console.log(users);
   }	else {
@@ -188,7 +183,7 @@ app.post("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("urls_login", templateVars);
 });
 
@@ -202,9 +197,8 @@ app.post("/login", (req, res) => {
   // const hashedLoginPassword = bcrypt.hashSync(loginPassword, 10)
   // console.log('Login Password', hashedLoginPassword)
   if (checkIfEmailExists(users, loginEmail) && bcrypt.compareSync(loginPassword, dbHashedPassword)) {
-  // if (checkIfEmailExists(users, loginEmail) && checkIfPasswordMatches(users, hashedLoginPassword, loginEmail)) {
     const matchedId = fetchUserIdFromDatabase(users, loginEmail);
-    res.cookie("user_id", matchedId);
+    req.session.user_id = matchedId;
     res.redirect("/urls");
   } else {
     res.status(403).json({Error: 'Invalid email/Password Combination'});
@@ -214,7 +208,7 @@ app.post("/login", (req, res) => {
 //when Logout is clicked
 //need to clear the user_id cookie and redirect to /urls
 app.get("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session.user_id = null;
   res.redirect('/urls');
 });
 
