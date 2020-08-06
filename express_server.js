@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 // const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session')
+const help = require('./helpers')
 
 app.use(cookieSession({
   name: 'session',
@@ -17,43 +18,43 @@ app.set("view engine", "ejs");
 //converting request body to a string from a buffer. then adding data to req object
 app.use(bodyParser.urlencoded({extended: true}));
 
-//random 6 digit generator
-const generateRandomString = function() {
-  const randomId = Math.random().toString(36).substring(2,8);
-  return randomId;
-};
+// //random 6 digit generator
+// const generateRandomString = function() {
+//   const randomId = Math.random().toString(36).substring(2,8);
+//   return randomId;
+// };
 
-const fetchUserIdFromDatabase = function(userObject, emailGiven) {
-  for (let key in userObject) {
-    if (emailGiven === userObject[key].email) {
-      return key;
-    }
-  }
-  return false;
-};
+// const fetchUserIdFromDatabase = function(userObject, emailGiven) {
+//   for (let key in userObject) {
+//     if (emailGiven === userObject[key].email) {
+//       return key;
+//     }
+//   }
+//   return false;
+// };
 
-//function that checks if email input on registration already exists in the database.
-// returns true if email is taken
-const checkIfEmailExists = function(userObject, emailGiven) {
-  const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
-  if (matchedUserId) {
-    return true;
-  }
-  return false;
-};
+// //function that checks if email input on registration already exists in the database.
+// // returns true if email is taken
+// const checkIfEmailExists = function(userObject, emailGiven) {
+//   const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
+//   if (matchedUserId) {
+//     return true;
+//   }
+//   return false;
+// };
 
-//Function that returns all the urls in the database that have the same ID as the logged in user
-// returns an object of the longURL strings from all the objects with matching Id's in the datebase. 
-//for example: urlsForUser('sample') returns b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: 'sample' }
-const urlsForUser = function(id) {
-	const individualLongUrls = {};
-  for (let eachUrlObj in urlDatabase) {
-  	if (urlDatabase[eachUrlObj].userID === id) {
-  		individualLongUrls[eachUrlObj] = urlDatabase[eachUrlObj];
-  	}
-  }
-  return individualLongUrls
-};
+// //Function that returns all the urls in the database that have the same ID as the logged in user
+// // returns an object of the longURL strings from all the objects with matching Id's in the datebase. 
+// //for example: urlsForUser('sample') returns b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: 'sample' }
+// const urlsForUser = function(id) {
+// 	const individualLongUrls = {};
+//   for (let eachUrlObj in urlDatabase) {
+//   	if (urlDatabase[eachUrlObj].userID === id) {
+//   		individualLongUrls[eachUrlObj] = urlDatabase[eachUrlObj];
+//   	}
+//   }
+//   return individualLongUrls
+// };
 
 //database containing short URLS and long URLS ad values
 const urlDatabase = {
@@ -91,7 +92,7 @@ app.listen(PORT, () => {
 //Main page to view URLS
 app.get("/urls", (req, res) => {
 	const loginAccountId = req.session.user_id;
-	const accountUrls = urlsForUser(loginAccountId);
+	const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
 	// console.log(accountUrls)
   const templateVars = { urls: accountUrls, user: users[loginAccountId] };
   res.render("urls_index", templateVars);
@@ -115,14 +116,14 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // post to create the tinyURL
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
+  const shortURL = help.generateRandomString();
   urlDatabase[shortURL] = { 'longURL': req.body.longURL, 'userID': users[req.session.user_id].id };
   res.redirect(`/urls/${shortURL}`);
 });
 
 // Short URL
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL; //// need to see if [req.params.shortURL] is correct.. dont understand the path
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
@@ -131,7 +132,7 @@ app.get("/u/:shortURL", (req, res) => {
 // userID had to match loginID in order to delete
 app.post("/urls/:shortURL/delete", (req, res) => {
   const loginAccountId = req.session.user_id;
-  const accountUrls = urlsForUser(loginAccountId);
+  const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
   const idOfAccountUrls = accountUrls[req.params.shortURL].userID
   if (loginAccountId === idOfAccountUrls) {
   delete urlDatabase[req.params.shortURL];
@@ -165,8 +166,8 @@ app.get("/register", (req, res) => {
 // saving registration info to a cookie
 //rediret to /urls
 app.post("/register", (req, res) => {
-  const randomID = generateRandomString();
-  if (req.body.email && req.body.password && !checkIfEmailExists(users, req.body.email)) {
+  const randomID = help.generateRandomString();
+  if (req.body.email && req.body.password && !help.checkIfEmailExists(users, req.body.email)) {
     const password = req.body.password;
     const hashedPassword = bcrypt.hashSync(password, 10)
     users[randomID] = {
@@ -191,13 +192,13 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const loginEmail = req.body.email;
   const loginPassword = req.body.password;
-  const loginId = fetchUserIdFromDatabase(users, loginEmail)
+  const loginId = help.fetchUserIdFromDatabase(users, loginEmail)
   const dbHashedPassword = users[loginId].password
   // console.log('users object to get password', users[loginId].password)
   // const hashedLoginPassword = bcrypt.hashSync(loginPassword, 10)
   // console.log('Login Password', hashedLoginPassword)
-  if (checkIfEmailExists(users, loginEmail) && bcrypt.compareSync(loginPassword, dbHashedPassword)) {
-    const matchedId = fetchUserIdFromDatabase(users, loginEmail);
+  if (help.checkIfEmailExists(users, loginEmail) && bcrypt.compareSync(loginPassword, dbHashedPassword)) {
+    const matchedId = help.fetchUserIdFromDatabase(users, loginEmail);
     req.session.user_id = matchedId;
     res.redirect("/urls");
   } else {
