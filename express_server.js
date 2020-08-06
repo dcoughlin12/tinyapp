@@ -3,7 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
-
+const bcrypt = require('bcrypt');
 
 app.use(cookieParser());
 //using express to use ejs as engine
@@ -172,10 +172,12 @@ app.get("/register", (req, res) => {
 app.post("/register", (req, res) => {
   const randomID = generateRandomString();
   if (req.body.email && req.body.password && !checkIfEmailExists(users, req.body.email)) {
+    const password = req.body.password;
+    const hashedPassword = bcrypt.hashSync(password, 10)
     users[randomID] = {
       id: randomID,
       email: req.body.email,
-      password: req.body.password
+      password: hashedPassword
     };
     res.cookie("user_id", randomID);
     res.redirect('/urls');
@@ -194,7 +196,13 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const loginEmail = req.body.email;
   const loginPassword = req.body.password;
-  if (checkIfEmailExists(users, loginEmail) && checkIfPasswordMatches(users, loginPassword, loginEmail)) {
+  const loginId = fetchUserIdFromDatabase(users, loginEmail)
+  const dbHashedPassword = users[loginId].password
+  // console.log('users object to get password', users[loginId].password)
+  // const hashedLoginPassword = bcrypt.hashSync(loginPassword, 10)
+  // console.log('Login Password', hashedLoginPassword)
+  if (checkIfEmailExists(users, loginEmail) && bcrypt.compareSync(loginPassword, dbHashedPassword)) {
+  // if (checkIfEmailExists(users, loginEmail) && checkIfPasswordMatches(users, hashedLoginPassword, loginEmail)) {
     const matchedId = fetchUserIdFromDatabase(users, loginEmail);
     res.cookie("user_id", matchedId);
     res.redirect("/urls");
