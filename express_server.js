@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-// const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session')
 const help = require('./helpers')
@@ -12,59 +11,17 @@ app.use(cookieSession({
   keys: ['key1', 'key2'],
 }))
 
-// app.use(cookieParser());
 //using express to use ejs as engine
 app.set("view engine", "ejs");
 //converting request body to a string from a buffer. then adding data to req object
 app.use(bodyParser.urlencoded({extended: true}));
 
-// //random 6 digit generator
-// const generateRandomString = function() {
-//   const randomId = Math.random().toString(36).substring(2,8);
-//   return randomId;
-// };
-
-// const fetchUserIdFromDatabase = function(userObject, emailGiven) {
-//   for (let key in userObject) {
-//     if (emailGiven === userObject[key].email) {
-//       return key;
-//     }
-//   }
-//   return false;
-// };
-
-// //function that checks if email input on registration already exists in the database.
-// // returns true if email is taken
-// const checkIfEmailExists = function(userObject, emailGiven) {
-//   const matchedUserId = fetchUserIdFromDatabase(userObject, emailGiven);
-//   if (matchedUserId) {
-//     return true;
-//   }
-//   return false;
-// };
-
-// //Function that returns all the urls in the database that have the same ID as the logged in user
-// // returns an object of the longURL strings from all the objects with matching Id's in the datebase. 
-// //for example: urlsForUser('sample') returns b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: 'sample' }
-// const urlsForUser = function(id) {
-// 	const individualLongUrls = {};
-//   for (let eachUrlObj in urlDatabase) {
-//   	if (urlDatabase[eachUrlObj].userID === id) {
-//   		individualLongUrls[eachUrlObj] = urlDatabase[eachUrlObj];
-//   	}
-//   }
-//   return individualLongUrls
-// };
 
 //database containing short URLS and long URLS ad values
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "sample" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "sample2" },
 };
-// const urlDatabase = { OLD DATABASE STRUCTURE ONLY HERE FOR REFERENCE WHEN MAKING CHANGES. DELETE LATER
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 
 //darabase containing user information
 const users = {
