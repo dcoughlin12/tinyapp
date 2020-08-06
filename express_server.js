@@ -47,7 +47,8 @@ const checkIfPasswordMatches = function(userObject, passwordGiven, emailGiven) {
 };
 
 //Function that returns all the urls in the database that have the same ID as the logged in user
-// returns an array of the longURL strings from all the objects with matching Id's in the datebase. 
+// returns an object of the longURL strings from all the objects with matching Id's in the datebase. 
+//for example: urlsForUser('sample') returns b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: 'sample' }
 const urlsForUser = function(id) {
 	const individualLongUrls = {};
   for (let eachUrlObj in urlDatabase) {
@@ -96,7 +97,7 @@ app.get("/urls", (req, res) => {
 	// console.log(urlsForUser(users[req.cookies.user_id].id))
 	const loginAccountId = req.cookies.user_id;
 	const accountUrls = urlsForUser(loginAccountId);
-	console.log(accountUrls)
+	// console.log(accountUrls)
   const templateVars = { urls: accountUrls, user: users[loginAccountId] };
   res.render("urls_index", templateVars);
 });
@@ -132,15 +133,29 @@ app.get("/u/:shortURL", (req, res) => {
 
 //use shortURL to delete URL from database object
 //redurect to list of URL
+// userID had to match loginID in order to delete
 app.post("/urls/:shortURL/delete", (req, res) => {
+  const loginAccountId = req.cookies.user_id;
+  const accountUrls = urlsForUser(loginAccountId);
+  const idOfAccountUrls = accountUrls[req.params.shortURL].userID
+  if (loginAccountId === idOfAccountUrls) {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
+  } else {
+    res.status(404).json({Error: 'You do not have access to modify this URL'});
+  }
 });
 
 // taking in the edit input, updating database to reflect new given long URL
+// userID had to match loginID in order to edit
 app.post("/urls/:shortURL", (req, res) => {
+  const loginAccountId = req.cookies.user_id;
+  if (loginAccountId === urlDatabase[req.params.shortURL].userID) {
   urlDatabase[req.params.shortURL].longURL = req.body.editedURL;
   res.redirect('/urls');
+  } else {
+    res.status(404).json({Error: 'You do not have access to modify this URL'});
+  }
 });
 
 
@@ -164,6 +179,7 @@ app.post("/register", (req, res) => {
     };
     res.cookie("user_id", randomID);
     res.redirect('/urls');
+    console.log(users);
   }	else {
     res.status(404).json({Error: 'Invalid email/Password OR email already used to register account.'});
   }
