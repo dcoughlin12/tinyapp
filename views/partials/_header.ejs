@@ -11,7 +11,7 @@
       </div>
     </div>
     <% if(user) { %>
-      <h6>Logged in as: <%= user.email %> </h6>
+      <h6 style="font-family: sans-serif; margin-right: 30px; margin-top: 8px;">Logged in as: <%= user.email %> </h6>
       <form method="get" action="/logout">
         <button type="submit" class="btn btn-outline-dark">Logout</button>
       </form>
@@ -20,7 +20,7 @@
         <button type="submit" class="btn btn-outline-dark">Login</button>
       </form>
       <form method="get" action="/register">
-        <button type="submit" class="btn btn-outline-dark">Register</button>
+        <button type="submit" class="btn btn-outline-dark" style="margin-left: 6px;">Register</button>
       </form>
     <% } %>  
   </nav>

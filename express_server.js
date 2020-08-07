@@ -30,21 +30,16 @@ const users = {
     email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk"
-  }
 };
 
 //PORT
 app.listen(PORT, () => {
-  console.log(`Tiny app listening on port ${PORT}!`);
+  console.log(`Tiny app listening on port ${PORT}!`); 
 });
 
 // HOME.. redirects to /urls if user is logged in. Otherwise to Login page
 app.get("/", (req, res) => {
-  let templateVars = { user: users[req.session.userID] };
+  const templateVars = { user: users[req.session.userID] };
   if (templateVars.user) {
     res.redirect("/urls");
   } else {
@@ -56,15 +51,13 @@ app.get("/", (req, res) => {
 app.get("/urls", (req, res) => {
   const loginAccountId = req.session.userID;
   const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
-  // console.log(accountUrls)
   const templateVars = { urls: accountUrls, user: users[loginAccountId] };
   res.render("urls_index", templateVars);
 });
 
-
 //page with input field to enter long URL. if not logged in redirected to loogin page
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.session.userID] };
+  const templateVars = { user: users[req.session.userID] };
   if (templateVars.user) {
     res.render("urls_new", templateVars);
   } else {
@@ -123,13 +116,11 @@ app.post("/urls/:shortURL", (req, res) => {
   }
 });
 
-
 //new template for login page
 app.get("/register", (req, res) => {
-  let templateVars = { user: null };
+  const templateVars = { user: null };
   res.render("urls_register", templateVars);
 });
-
 
 // moving registration info to users object database
 // saving registration info to a cookie

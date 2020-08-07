@@ -7,12 +7,14 @@
 </head>
 <body>
   <%- include('partials/_header') %>
-  <h3> Welcome Back!</h3>
-  <h4> Please Login below </h4> 
-  <form action="/login" method="POST">
-    <input type="email" name="email" placeholder="email">
-    <input type="password" name="password" placeholder="Password">
-    <button type="submit" class="btn btn-outline-dark">Login</button>
+  <h3 style=" padding-top: 20px; text-align: center;"> Welcome Back!</h3>
+  <h4 style=" padding-top: 5px; text-align: center;"> Please Login below </h4> 
+  <form style=" padding-top: 20px; text-align: center;" action="/login" method="POST">
+    <input style="text-align: center;" type="email" name="email" placeholder="Email">
+    <br>
+    <input style="text-align: center; margin-top: 5px" type="password" name="password" placeholder="Password">
+    <br>
+    <button style="margin-top: 8px" type="submit" class="btn btn-outline-dark">Login</button>
   </form>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

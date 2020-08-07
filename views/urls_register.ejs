@@ -8,12 +8,14 @@
 
 <body>
   <%- include('partials/_header') %>
-  <h3> Welcome to TinyApp!</h3>
-  <h4> Please Register below </h4> 
-  <form action="/register" method="POST">
-        <input type="email" name="email" placeholder="email">
-        <input type="password" name="password" placeholder="Password">
-        <button type="submit" class="btn btn-outline-dark">Register</button>
+  <h3 style=" padding-top: 20px; text-align: center;"> Welcome to TinyApp!</h3>
+  <h4 style=" padding-top: 5px; text-align: center;"> Please Register Below </h4> 
+  <form style=" padding-top: 20px; text-align: center;" action="/register" method="POST">
+        <input style="text-align: center;" type="email" name="email" placeholder="Email">
+        <br>
+        <input style="text-align: center; margin-top: 5px" type="password" name="password" placeholder="Password">
+        <br>
+        <button style="margin-top: 8px" type="submit" class="btn btn-outline-dark">Register</button>
     </form>
 
   <!-- Bootstrap JS -->
