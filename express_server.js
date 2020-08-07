@@ -2,14 +2,14 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const bcrypt = require('bcrypt');
-const cookieSession = require('cookie-session')
-const help = require('./helpers')
+const bcrypt = require('bcrypt'); //Password Hasher
+const cookieSession = require('cookie-session'); //cookie encryption
+const help = require('./helpers'); //helper functions in helpers.js
 
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
-}))
+}));
 
 //using express to use ejs as engine
 app.set("view engine", "ejs");
@@ -17,13 +17,13 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 
 
-//database containing short URLS and long URLS ad values
+//Database containing short URLS and long URLS and user ID's tagged to each. Leaving examples here for reference
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "sample" },
   "9sm5xK": { longURL: "http://www.google.com", userID: "sample2" },
 };
 
-//darabase containing user information
+//Database containing user information. Leaving values here for reference.
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -36,21 +36,27 @@ const users = {
     password: "dishwasher-funk"
   }
 };
-// HOME
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
+
 //PORT
 app.listen(PORT, () => {
   console.log(`Tiny app listening on port ${PORT}!`);
 });
 
+// HOME.. redirects to /urls if user is logged in. Otherwise to Login page
+app.get("/", (req, res) => {
+  let templateVars = { user: users[req.session.userID] };
+  if (templateVars.user) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
+});
 
 //Main page to view URLS
 app.get("/urls", (req, res) => {
-	const loginAccountId = req.session.user_id;
-	const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
-	// console.log(accountUrls)
+  const loginAccountId = req.session.userID;
+  const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
+  // console.log(accountUrls)
   const templateVars = { urls: accountUrls, user: users[loginAccountId] };
   res.render("urls_index", templateVars);
 });
@@ -58,23 +64,29 @@ app.get("/urls", (req, res) => {
 
 //page with input field to enter long URL. if not logged in redirected to loogin page
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.session.user_id] };
+  let templateVars = { user: users[req.session.userID] };
   if (templateVars.user) {
-  	res.render("urls_new", templateVars);
+    res.render("urls_new", templateVars);
   } else {
-  res.redirect("/login");
-}
+    res.redirect("/login");
+  }
 });
 
+// Edit Long url. can modify the long URL. have to be the account assigned to the short URL in order to access the page and make changes
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
-  res.render("urls_show", templateVars);
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.userID] };
+  const loginAccountId = req.session.userID;
+  if (loginAccountId === urlDatabase[req.params.shortURL].userID) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(404).json({Error: 'You do not have access to modify this URL'});
+  }
 });
 
 // post to create the tinyURL
 app.post("/urls", (req, res) => {
   const shortURL = help.generateRandomString();
-  urlDatabase[shortURL] = { 'longURL': req.body.longURL, 'userID': users[req.session.user_id].id };
+  urlDatabase[shortURL] = { 'longURL': req.body.longURL, 'userID': users[req.session.userID].id };
   res.redirect(`/urls/${shortURL}`);
 });
 
@@ -88,24 +100,24 @@ app.get("/u/:shortURL", (req, res) => {
 //redurect to list of URL
 // userID had to match loginID in order to delete
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const loginAccountId = req.session.user_id;
+  const loginAccountId = req.session.userID;
   const accountUrls = help.urlsForUser(loginAccountId, urlDatabase);
-  const idOfAccountUrls = accountUrls[req.params.shortURL].userID
+  const idOfAccountUrls = accountUrls[req.params.shortURL].userID;
   if (loginAccountId === idOfAccountUrls) {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
   } else {
     res.status(404).json({Error: 'You do not have access to modify this URL'});
   }
 });
 
 // taking in the edit input, updating database to reflect new given long URL
-// userID had to match loginID in order to edit
+// userID has to match loginID in order to edit
 app.post("/urls/:shortURL", (req, res) => {
-  const loginAccountId = req.session.user_id;
+  const loginAccountId = req.session.userID;
   if (loginAccountId === urlDatabase[req.params.shortURL].userID) {
-  urlDatabase[req.params.shortURL].longURL = req.body.editedURL;
-  res.redirect('/urls');
+    urlDatabase[req.params.shortURL].longURL = req.body.editedURL;
+    res.redirect('/urls');
   } else {
     res.status(404).json({Error: 'You do not have access to modify this URL'});
   }
@@ -126,22 +138,22 @@ app.post("/register", (req, res) => {
   const randomID = help.generateRandomString();
   if (req.body.email && req.body.password && !help.checkIfEmailExists(users, req.body.email)) {
     const password = req.body.password;
-    const hashedPassword = bcrypt.hashSync(password, 10)
+    const hashedPassword = bcrypt.hashSync(password, 10);
     users[randomID] = {
       id: randomID,
       email: req.body.email,
       password: hashedPassword
     };
-    req.session.user_id = randomID;
+    req.session.userID = randomID;
     res.redirect('/urls');
-    console.log(users);
   }	else {
-    res.status(404).json({Error: 'Invalid email/Password OR email already used to register account.'});
+    res.status(404).json({Error: 'Invalid email/Password OR email already assigned to an account.'});
   }
 });
 
+// Login Render
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.session.user_id] };
+  const templateVars = { user: users[req.session.userID] };
   res.render("urls_login", templateVars);
 });
 
@@ -149,14 +161,14 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   const loginEmail = req.body.email;
   const loginPassword = req.body.password;
-  const loginId = help.fetchUserIdFromDatabase(users, loginEmail)
-  const dbHashedPassword = users[loginId].password
-  // console.log('users object to get password', users[loginId].password)
-  // const hashedLoginPassword = bcrypt.hashSync(loginPassword, 10)
-  // console.log('Login Password', hashedLoginPassword)
+  const loginId = help.fetchUserIdFromDatabase(users, loginEmail);
+  if (!loginId) {
+    res.status(403).json({Error: 'Invalid email/Password Combination'});
+  }
+  const dbHashedPassword = users[loginId].password;
   if (help.checkIfEmailExists(users, loginEmail) && bcrypt.compareSync(loginPassword, dbHashedPassword)) {
     const matchedId = help.fetchUserIdFromDatabase(users, loginEmail);
-    req.session.user_id = matchedId;
+    req.session.userID = matchedId;
     res.redirect("/urls");
   } else {
     res.status(403).json({Error: 'Invalid email/Password Combination'});
@@ -164,9 +176,9 @@ app.post("/login", (req, res) => {
 });
 
 //when Logout is clicked
-//need to clear the user_id cookie and redirect to /urls
+//Need to set cookie as null with Session
 app.get("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session.userID = null;
   res.redirect('/urls');
 });
 

@@ -24,16 +24,16 @@ const checkIfEmailExists = function(userObject, emailGiven) {
 };
 
 //Function that returns all the urls in the database that have the same ID as the logged in user
-// returns an object of the longURL strings from all the objects with matching Id's in the datebase. 
+// returns an object of the longURL strings from all the objects with matching Id's in the datebase.
 //for example: urlsForUser('sample') returns b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: 'sample' }
 const urlsForUser = function(id, datebase) {
-	const individualLongUrls = {};
+  const individualLongUrls = {};
   for (let eachUrlObj in datebase) {
-  	if (datebase[eachUrlObj].userID === id) {
-  		individualLongUrls[eachUrlObj] = datebase[eachUrlObj];
-  	}
+    if (datebase[eachUrlObj].userID === id) {
+      individualLongUrls[eachUrlObj] = datebase[eachUrlObj];
+    }
   }
-  return individualLongUrls
+  return individualLongUrls;
 };
 
-module.exports = {generateRandomString, fetchUserIdFromDatabase, checkIfEmailExists, urlsForUser}
+module.exports = {generateRandomString, fetchUserIdFromDatabase, checkIfEmailExists, urlsForUser};
